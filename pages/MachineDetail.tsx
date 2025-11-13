@@ -247,15 +247,20 @@ const MachineDetail: React.FC = () => {
                      <div className="overflow-y-auto h-64">
                         <ul className="divide-y">
                             {maintenanceHistory.map(log => (
-                                <li key={log.id} className="py-2">
-                                    <div className="flex justify-between items-center">
+                                <li key={log.id} className="py-3">
+                                    <div className="flex justify-between items-center gap-4 flex-wrap">
                                         <div>
-                                            <p className="font-semibold">{new Date(log.date).toLocaleDateString('pt-BR')} - {log.type}</p>
-                                            <p className="text-sm text-gray-500">Horímetro: {log.hourMeter}h</p>
+                                            <p className="font-semibold">{new Date(log.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - <span className="font-normal">{log.type}</span></p>
+                                            <p className="text-sm text-gray-500">Horímetro: {log.hourMeter.toLocaleString('pt-BR')}h</p>
                                         </div>
-                                        <p className="font-bold text-gray-700">{log.totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                        <div className="flex items-center space-x-4 flex-shrink-0">
+                                            <p className="font-bold text-gray-700">{log.totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                            <Link to={`/maintenance/${log.id}`} className="px-4 py-2 text-sm text-white bg-agro-green rounded-lg hover:bg-opacity-90 transition-colors whitespace-nowrap">
+                                                Visualizar Detalhes
+                                            </Link>
+                                        </div>
                                     </div>
-                                    {log.notes && <p className="text-sm text-gray-600 mt-1 italic">"{log.notes}"</p>}
+                                    {log.notes && <p className="text-sm text-gray-600 mt-1 italic truncate">"{log.notes}"</p>}
                                 </li>
                             ))}
                         </ul>

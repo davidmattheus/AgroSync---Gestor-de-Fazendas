@@ -1,46 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../components/ui/Card';
 import { useFarmData } from '../context/FarmDataContext';
 import { PlusIcon, XCircleIcon, TrashIcon } from '../components/ui/Icons';
-import { MaintenanceType, MaintenanceLog, MaintenancePart } from '../types';
+import { MaintenanceType, MaintenanceLog, MaintenancePart, WarehouseItem } from '../types';
 
 const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
     const { farm, addMaintenanceLog } = useFarmData();
     const [machineId, setMachineId] = useState('');
     const [collaboratorId, setCollaboratorId] = useState('');
     const [type, setType] = useState<MaintenanceType>(MaintenanceType.PREVENTIVE);
-    const [totalCost, setTotalCost] = useState('');
+    const [additionalCost, setAdditionalCost] = useState('');
     const [hourMeter, setHourMeter] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [notes, setNotes] = useState('');
 
     // State for parts
     const [partsUsed, setPartsUsed] = useState<MaintenancePart[]>([]);
-    const [selectedPartId, setSelectedPartId] = useState('');
+    const [partSearchTerm, setPartSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState<WarehouseItem[]>([]);
+    const [selectedPart, setSelectedPart] = useState<WarehouseItem | null>(null);
     const [partQuantity, setPartQuantity] = useState(1);
 
+    useEffect(() => {
+        if (partSearchTerm.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        const availableItems = farm.warehouseItems.filter(p => 
+            p.stockQuantity > 0 && !partsUsed.some(up => up.itemId === p.id)
+        );
+        const results = availableItems.filter(item =>
+            item.name.toLowerCase().includes(partSearchTerm.toLowerCase()) ||
+            item.code.toLowerCase().includes(partSearchTerm.toLowerCase())
+        );
+        setSearchResults(results);
+    }, [partSearchTerm, farm.warehouseItems, partsUsed]);
+
+    const partsTotalCost = useMemo(() => {
+        return partsUsed.reduce((acc, part) => {
+            const itemInfo = farm.warehouseItems.find(p => p.id === part.itemId);
+            if (itemInfo) {
+                return acc + (itemInfo.unitValue * part.quantity);
+            }
+            return acc;
+        }, 0);
+    }, [partsUsed, farm.warehouseItems]);
+
+    const finalTotalCost = useMemo(() => {
+        const cost = parseFloat(additionalCost) || 0;
+        return partsTotalCost + cost;
+    }, [partsTotalCost, additionalCost]);
+
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPartSearchTerm(e.target.value);
+        setSelectedPart(null); // Clear full selection when user types again
+    };
+
+    const handleSelectPart = (item: WarehouseItem) => {
+        setSelectedPart(item);
+        setPartSearchTerm(`${item.name} (${item.code})`);
+        setSearchResults([]);
+    };
+
+
     const handleAddPart = () => {
-        if (!selectedPartId || partQuantity <= 0) {
-            alert("Selecione uma peça e informe uma quantidade válida.");
+        if (!selectedPart || partQuantity <= 0) {
+            alert("Selecione uma peça da busca e informe uma quantidade válida.");
             return;
         }
-        const part = farm.warehouseItems.find(p => p.id === selectedPartId);
-        if (!part) return;
-
+        
         // Check if there's enough stock
-        if (part.stockQuantity < partQuantity) {
-            alert(`Estoque insuficiente. Apenas ${part.stockQuantity} unidades de "${part.name}" disponíveis.`);
+        if (selectedPart.stockQuantity < partQuantity) {
+            alert(`Estoque insuficiente. Apenas ${selectedPart.stockQuantity} unidades de "${selectedPart.name}" disponíveis.`);
             return;
         }
 
-        // Check if part is already in the list to avoid duplicates
-        if (partsUsed.some(p => p.itemId === selectedPartId)) {
-            alert("Esta peça já foi adicionada.");
-            return;
-        }
-
-        setPartsUsed([...partsUsed, { itemId: selectedPartId, quantity: partQuantity }]);
-        setSelectedPartId('');
+        setPartsUsed([...partsUsed, { itemId: selectedPart.id, quantity: partQuantity }]);
+        
+        // Reset search/selection fields
+        setSelectedPart(null);
+        setPartSearchTerm('');
         setPartQuantity(1);
     };
 
@@ -50,7 +91,7 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!machineId || !collaboratorId || !totalCost || !hourMeter || !date || !type) {
+        if (!machineId || !collaboratorId || !hourMeter || !date || !type) {
             alert("Por favor, preencha todos os campos obrigatórios.");
             return;
         }
@@ -60,7 +101,7 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
             machineId,
             collaboratorId,
             type,
-            totalCost: parseFloat(totalCost),
+            totalCost: finalTotalCost,
             hourMeter: parseInt(hourMeter),
             notes,
             partsUsed: partsUsed
@@ -107,8 +148,8 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
                             <input type="number" min="0" value={hourMeter} onChange={e => setHourMeter(e.target.value)} required className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green" />
                         </div>
                         <div>
-                            <label className="text-sm font-bold text-gray-600 block">Custo Total (R$)</label>
-                            <input type="number" step="0.01" min="0" value={totalCost} onChange={e => setTotalCost(e.target.value)} required className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green" />
+                            <label className="text-sm font-bold text-gray-600 block">Custo Adicional (mão de obra, outros)</label>
+                            <input type="number" step="0.01" min="0" value={additionalCost} onChange={e => setAdditionalCost(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green" placeholder="Opcional" />
                         </div>
                     </div>
                      <div>
@@ -118,13 +159,30 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
 
                     <div className="pt-4 mt-4 border-t">
                         <h4 className="text-md font-bold text-gray-700 mb-2">Peças Utilizadas (Opcional)</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                            <div className="md:col-span-2">
-                                <label className="text-sm font-bold text-gray-600 block">Peça</label>
-                                <select value={selectedPartId} onChange={e => setSelectedPartId(e.target.value)} className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green">
-                                    <option value="" disabled>Selecione uma peça...</option>
-                                    {farm.warehouseItems.filter(p => p.stockQuantity > 0).map(p => <option key={p.id} value={p.id}>{p.name} ({p.stockQuantity} em estoque)</option>)}
-                                </select>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+                            <div className="md:col-span-2 relative">
+                                <label className="text-sm font-bold text-gray-600 block">Buscar Peça</label>
+                                 <input
+                                    type="text"
+                                    placeholder="Digite o nome ou código..."
+                                    value={partSearchTerm}
+                                    onChange={handleSearchChange}
+                                    className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green"
+                                />
+                                {searchResults.length > 0 && (
+                                    <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                                        {searchResults.map(item => (
+                                            <li
+                                                key={item.id}
+                                                className="p-2 hover:bg-agro-light-green cursor-pointer"
+                                                onClick={() => handleSelectPart(item)}
+                                            >
+                                                <p className="font-semibold">{item.name}</p>
+                                                <p className="text-xs text-gray-500">{item.code} | Estoque: {item.stockQuantity}</p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
                              <div>
                                 <label className="text-sm font-bold text-gray-600 block">Qtd.</label>
@@ -149,6 +207,14 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
                                 );
                             })}
                         </div>
+                    </div>
+                    
+                     <div className="pt-4 mt-4 border-t">
+                        <div className="flex justify-between items-center text-lg font-bold">
+                            <span className="text-agro-gray-800">Custo Total da Manutenção:</span>
+                            <span className="text-agro-green">{finalTotalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 text-right">(Custo Adicional + Valor das Peças)</p>
                     </div>
 
                     <div className="flex justify-end pt-4 border-t">

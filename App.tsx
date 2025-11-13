@@ -9,6 +9,7 @@ import Machines from './pages/Machines';
 import MachineDetail from './pages/MachineDetail';
 import Fueling from './pages/Fueling';
 import Maintenance from './pages/Maintenance';
+import MaintenanceDetail from './pages/MaintenanceDetail';
 import Warehouse from './pages/Almoxarifado';
 import Collaborators from './pages/Collaborators';
 import Reports from './pages/Reports';
@@ -37,6 +38,7 @@ const App: React.FC = () => {
               <Route path="machines/:id" element={<MachineDetail />} />
               <Route path="fueling" element={<Fueling />} />
               <Route path="maintenance" element={<Maintenance />} />
+              <Route path="maintenance/:id" element={<MaintenanceDetail />} />
               <Route path="warehouse" element={<Warehouse />} />
               <Route path="collaborators" element={<Collaborators />} />
               <Route path="reports" element={<Reports />} />
