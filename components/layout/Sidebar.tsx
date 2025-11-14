@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { DashboardIcon, TractorIcon, FuelIcon, WrenchIcon, UsersIcon, ReportIcon, LogoutIcon, SettingsIcon, BoxIcon } from '../ui/Icons';
+import { DashboardIcon, TractorIcon, FuelIcon, WrenchIcon, UsersIcon, ReportIcon, LogoutIcon, SettingsIcon, BoxIcon, ShoppingCartIcon } from '../ui/Icons';
 
 interface NavItem {
   to: string;
@@ -15,6 +15,7 @@ const navItems: NavItem[] = [
   { to: '/fueling', label: 'Abastecimentos', icon: <FuelIcon /> },
   { to: '/maintenance', label: 'Manutenções', icon: <WrenchIcon /> },
   { to: '/warehouse', label: 'Almoxarifado', icon: <BoxIcon /> },
+  { to: '/purchases', label: 'Compras', icon: <ShoppingCartIcon /> },
   { to: '/collaborators', label: 'Colaboradores', icon: <UsersIcon /> },
   { to: '/reports', label: 'Relatórios', icon: <ReportIcon /> },
 ];
@@ -67,7 +68,7 @@ const Sidebar: React.FC<{ sidebarOpen: boolean; setSidebarOpen: (open: boolean) 
 
   return (
     <>
-      <div className="hidden md:flex md:flex-shrink-0">
+      <div className="hidden md:flex md:flex-shrink-0 print-hidden">
         <div className="flex flex-col w-64">
           <div className="bg-white border-r h-full">
             {sidebarContent}
@@ -75,7 +76,7 @@ const Sidebar: React.FC<{ sidebarOpen: boolean; setSidebarOpen: (open: boolean) 
         </div>
       </div>
        {/* Mobile sidebar */}
-       <div className={`fixed inset-0 z-40 flex md:hidden ${sidebarOpen ? 'block' : 'hidden'}`} role="dialog" aria-modal="true">
+       <div className={`fixed inset-0 z-40 flex md:hidden print-hidden ${sidebarOpen ? 'block' : 'hidden'}`} role="dialog" aria-modal="true">
             <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)}></div>
             <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
                 <div className="absolute top-0 right-0 -mr-12 pt-2">

@@ -2,11 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import { useFarmData } from '../context/FarmDataContext';
-import { PlusIcon, XCircleIcon, TrashIcon } from '../components/ui/Icons';
+import { PlusIcon, XCircleIcon, TrashIcon, EditIcon } from '../components/ui/Icons';
 import { MaintenanceType, MaintenanceLog, MaintenancePart, WarehouseItem } from '../types';
 
-const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) => {
-    const { farm, addMaintenanceLog } = useFarmData();
+const MaintenanceFormModal: React.FC<{ logToEdit: MaintenanceLog | null; onClose: () => void; }> = ({ logToEdit, onClose }) => {
+    const { farm, addMaintenanceLog, updateMaintenanceLog } = useFarmData();
     const [machineId, setMachineId] = useState('');
     const [collaboratorId, setCollaboratorId] = useState('');
     const [type, setType] = useState<MaintenanceType>(MaintenanceType.PREVENTIVE);
@@ -21,6 +21,26 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
     const [searchResults, setSearchResults] = useState<WarehouseItem[]>([]);
     const [selectedPart, setSelectedPart] = useState<WarehouseItem | null>(null);
     const [partQuantity, setPartQuantity] = useState(1);
+
+    useEffect(() => {
+        if (logToEdit) {
+            setMachineId(logToEdit.machineId);
+            setCollaboratorId(logToEdit.collaboratorId);
+            setType(logToEdit.type);
+            
+            const partsCost = logToEdit.partsUsed?.reduce((acc, part) => {
+                const item = farm.warehouseItems.find(i => i.id === part.itemId);
+                return acc + (item ? item.unitValue * part.quantity : 0);
+            }, 0) || 0;
+            const additionalCostValue = logToEdit.totalCost - partsCost;
+            setAdditionalCost(additionalCostValue > 0 ? String(additionalCostValue) : '');
+
+            setHourMeter(String(logToEdit.hourMeter));
+            setDate(new Date(logToEdit.date).toISOString().split('T')[0]);
+            setNotes(logToEdit.notes || '');
+            setPartsUsed(logToEdit.partsUsed || []);
+        }
+    }, [logToEdit, farm.warehouseItems]);
 
     useEffect(() => {
         if (partSearchTerm.length < 2) {
@@ -97,7 +117,7 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
             return;
         }
 
-        const log: Omit<MaintenanceLog, 'id'> = {
+        const logData: Omit<MaintenanceLog, 'id'> = {
             date: new Date(date).toISOString(),
             machineId,
             collaboratorId,
@@ -107,7 +127,12 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
             notes,
             partsUsed: partsUsed
         };
-        addMaintenanceLog(log);
+
+        if (logToEdit) {
+            updateMaintenanceLog({ ...logData, id: logToEdit.id });
+        } else {
+            addMaintenanceLog(logData);
+        }
         onClose();
     };
 
@@ -117,7 +142,7 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
                     <XCircleIcon size={28}/>
                 </button>
-                <h3 className="text-xl font-bold text-agro-gray-800 mb-4">Registrar Manutenção</h3>
+                <h3 className="text-xl font-bold text-agro-gray-800 mb-4">{logToEdit ? 'Editar Manutenção' : 'Registrar Manutenção'}</h3>
                 <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto pr-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div>
@@ -220,7 +245,7 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
 
                     <div className="flex justify-end pt-4 border-t">
                         <button type="button" onClick={onClose} className="px-4 py-2 mr-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 text-white bg-agro-green rounded-lg hover:bg-opacity-90">Salvar Manutenção</button>
+                        <button type="submit" className="px-4 py-2 text-white bg-agro-green rounded-lg hover:bg-opacity-90">{logToEdit ? 'Salvar Alterações' : 'Salvar Manutenção'}</button>
                     </div>
                 </form>
             </Card>
@@ -231,18 +256,29 @@ const AddMaintenanceModal: React.FC<{ onClose: () => void; }> = ({ onClose }) =>
 const Maintenance: React.FC = () => {
   const { farm: { maintenanceLogs }, getMachineById, getCollaboratorById, loading } = useFarmData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingLog, setEditingLog] = useState<MaintenanceLog | null>(null);
+
+  const handleOpenModal = (log: MaintenanceLog | null = null) => {
+    setEditingLog(log);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingLog(null);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-agro-gray-800">Histórico de Manutenções</h2>
-        <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 text-white bg-agro-green rounded-lg hover:bg-opacity-90">
+        <button onClick={() => handleOpenModal()} className="flex items-center px-4 py-2 text-white bg-agro-green rounded-lg hover:bg-opacity-90">
             <PlusIcon className="w-5 h-5 mr-2" />
             Registrar Manutenção
         </button>
       </div>
       
-      {isModalOpen && <AddMaintenanceModal onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && <MaintenanceFormModal logToEdit={editingLog} onClose={handleCloseModal} />}
 
       <Card>
         {/* Add filters here */}
@@ -275,9 +311,14 @@ const Maintenance: React.FC = () => {
                       <td className="p-4">{log.hourMeter.toLocaleString('pt-BR')}h</td>
                       <td className="p-4 font-semibold">{log.totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                       <td className="p-4">
+                        <div className="flex items-center space-x-4">
+                          <button onClick={() => handleOpenModal(log)} className="text-blue-600 hover:text-blue-800" title="Editar">
+                            <EditIcon size={20}/>
+                          </button>
                           <Link to={`/maintenance/${log.id}`} className="px-3 py-1.5 text-sm text-white bg-agro-green rounded-lg hover:bg-opacity-90 transition-colors whitespace-nowrap">
                               Detalhes
                           </Link>
+                        </div>
                       </td>
                     </tr>
                   )

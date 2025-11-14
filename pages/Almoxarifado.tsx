@@ -89,6 +89,62 @@ const WarehouseItemFormModal: React.FC<{ item: WarehouseItem | null; onClose: ()
     );
 };
 
+const AddStockModal: React.FC<{ item: WarehouseItem; onClose: () => void; }> = ({ item, onClose }) => {
+    const { addStockToWarehouseItem } = useFarmData();
+    const [quantity, setQuantity] = useState(1);
+    const [invoiceNumber, setInvoiceNumber] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (quantity <= 0) {
+            alert('A quantidade deve ser maior que zero.');
+            return;
+        }
+        addStockToWarehouseItem(item.id, quantity, invoiceNumber);
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <Card className="w-full max-w-md relative">
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                    <XCircleIcon size={28}/>
+                </button>
+                <h3 className="text-xl font-bold text-agro-gray-800 mb-2">Adicionar Estoque</h3>
+                <p className="text-agro-gray-600 mb-6">{item.name}</p>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="text-sm font-bold text-gray-600 block">Quantidade a Adicionar*</label>
+                        <input 
+                            type="number" 
+                            min="1"
+                            value={quantity} 
+                            onChange={e => setQuantity(Number(e.target.value))} 
+                            required 
+                            className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green" 
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-bold text-gray-600 block">Número da Nota Fiscal</label>
+                        <input 
+                            type="text" 
+                            value={invoiceNumber} 
+                            onChange={e => setInvoiceNumber(e.target.value)} 
+                            className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green"
+                            placeholder="Opcional"
+                        />
+                    </div>
+                    <div className="flex justify-end pt-4 border-t">
+                        <button type="button" onClick={onClose} className="px-4 py-2 mr-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Cancelar</button>
+                        <button type="submit" className="px-4 py-2 text-white bg-agro-green rounded-lg hover:bg-opacity-90">Adicionar</button>
+                    </div>
+                </form>
+            </Card>
+        </div>
+    );
+};
+
 const WarehouseItemHistoryModal: React.FC<{ item: WarehouseItem; onClose: () => void; }> = ({ item, onClose }) => {
     const sortedHistory = useMemo(() => {
         return item.stockHistory ? [...item.stockHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : [];
@@ -123,6 +179,9 @@ const WarehouseItemHistoryModal: React.FC<{ item: WarehouseItem; onClose: () => 
                                         ) : (
                                             log.reason
                                         )}
+                                        {log.invoiceNumber && (
+                                            <span className="block text-xs text-gray-500 italic">NF: {log.invoiceNumber}</span>
+                                        )}
                                     </td>
                                     <td className={`p-2 text-center font-semibold ${log.quantityChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {log.quantityChange > 0 ? `+${log.quantityChange}` : log.quantityChange}
@@ -152,6 +211,7 @@ const Warehouse: React.FC = () => {
   const [editingItem, setEditingItem] = useState<WarehouseItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [historyModalItem, setHistoryModalItem] = useState<WarehouseItem | null>(null);
+  const [addStockItem, setAddStockItem] = useState<WarehouseItem | null>(null);
 
   const canManage = user?.role === UserRole.ADMIN;
 
@@ -215,6 +275,8 @@ const Warehouse: React.FC = () => {
       
       {isModalOpen && canManage && <WarehouseItemFormModal item={editingItem} onClose={() => setIsModalOpen(false)} />}
       {historyModalItem && <WarehouseItemHistoryModal item={historyModalItem} onClose={() => setHistoryModalItem(null)} />}
+      {addStockItem && canManage && <AddStockModal item={addStockItem} onClose={() => setAddStockItem(null)} />}
+
 
       <Card>
         <div className="mb-4">
@@ -276,6 +338,7 @@ const Warehouse: React.FC = () => {
                         <td className="p-4">
                           <div className="flex items-center space-x-4">
                             <button onClick={() => setHistoryModalItem(item)} className="text-green-600 hover:text-green-800" title="Ver Histórico"><FileTextIcon size={20}/></button>
+                            <button onClick={() => setAddStockItem(item)} className="text-gray-600 hover:text-gray-800" title="Adicionar Estoque"><PlusIcon size={20}/></button>
                             <button onClick={() => handleOpenModal(item)} className="text-blue-600 hover:text-blue-800" title="Editar"><EditIcon size={20}/></button>
                             <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-800" title="Excluir"><TrashIcon size={20}/></button>
                           </div>

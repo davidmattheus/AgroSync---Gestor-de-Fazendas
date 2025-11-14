@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useFarmData } from '../context/FarmDataContext';
 import Card from '../components/ui/Card';
-import { ArrowLeftIcon, BoxIcon } from '../components/ui/Icons';
+import { ArrowLeftIcon, BoxIcon, PrinterIcon } from '../components/ui/Icons';
 
 const MaintenanceDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -33,10 +33,24 @@ const MaintenanceDetail: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Link to={machine ? `/machines/${machine.id}` : '/maintenance'} className="flex items-center text-agro-green hover:text-green-700">
-                <ArrowLeftIcon className="w-5 h-5 mr-2" />
-                {machine ? `Voltar para ${machine.name}` : 'Voltar para o Histórico'}
-            </Link>
+            <div className="hidden print-visible mb-6 border-b pb-4">
+                <h1 className="text-2xl font-bold text-agro-green">Relatório de Manutenção</h1>
+                <p className="text-md text-agro-gray-700">Fazenda: {farm.name || 'Não informada'}</p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 print-hidden">
+                <Link to={machine ? `/machines/${machine.id}` : '/maintenance'} className="flex items-center text-agro-green hover:text-green-700">
+                    <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                    {machine ? `Voltar para ${machine.name}` : 'Voltar para o Histórico'}
+                </Link>
+                 <button
+                    onClick={() => window.print()}
+                    className="flex items-center px-4 py-2 text-white bg-agro-green rounded-lg shadow-md hover:bg-opacity-90 transition-colors"
+                >
+                    <PrinterIcon className="w-5 h-5 mr-2" />
+                    Imprimir
+                </button>
+            </div>
             
             <Card>
                 <div className="flex flex-wrap justify-between items-start gap-4 pb-4 border-b">
@@ -64,13 +78,13 @@ const MaintenanceDetail: React.FC = () => {
                  )}
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print-layout-stack">
+                <div className="lg:col-span-2 print:mb-6">
                     <Card>
                          <h3 className="text-lg font-semibold text-agro-gray-800 mb-4 flex items-center"><BoxIcon className="mr-2 text-agro-green"/> Peças Utilizadas do Almoxarifado</h3>
                          {log.partsUsed && log.partsUsed.length > 0 ? (
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left">
+                                <table className="w-full text-left print-table">
                                     <thead className="border-b">
                                         <tr className="text-sm text-agro-gray-600">
                                             <th className="p-2">Peça</th>

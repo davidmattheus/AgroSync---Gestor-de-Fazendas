@@ -125,8 +125,9 @@ export interface StockHistoryLog {
     date: string; // ISO 8601 format
     quantityChange: number; // e.g., +10 for addition, -2 for deduction
     newStockLevel: number;
-    reason: string; // e.g., "Entrada Inicial", "Ajuste Manual", "Saída p/ Manutenção"
-    referenceId?: string; // e.g., maintenanceLogId
+    reason: string; // e.g., "Entrada Inicial", "Ajuste Manual", "Saída p/ Manutenção", "Entrada via Compra"
+    referenceId?: string; // e.g., maintenanceLogId or purchaseOrderId
+    invoiceNumber?: string;
 }
 
 export interface WarehouseItem {
@@ -139,6 +140,37 @@ export interface WarehouseItem {
     stockHistory?: StockHistoryLog[];
 }
 
+export enum PurchaseOrderStatus {
+    PENDING = 'Pendente',
+    APPROVED = 'Aprovado',
+    FULFILLED = 'Atendido',
+    CANCELLED = 'Cancelado',
+}
+
+export interface PurchaseOrderItem {
+    itemId: string; // Links to WarehouseItem ID
+    quantity: number;
+    notes?: string;
+}
+
+export interface PurchaseOrder {
+    id: string;
+    code: string; // e.g., PED-000001
+    items: PurchaseOrderItem[];
+    status: PurchaseOrderStatus;
+    requestDate: string; // ISO 8601
+    requesterId: string; // Links to User ID or Collaborator ID
+    approvalDate?: string;
+    approvedById?: string;
+    fulfilledDate?: string;
+    fulfilledById?: string;
+    notes?: string;
+    cancellationDate?: string;
+    cancelledById?: string;
+    cancellationReason?: string;
+}
+
+
 export interface Farm {
     name: string | null;
     machines: Machine[];
@@ -147,4 +179,5 @@ export interface Farm {
     maintenanceLogs: MaintenanceLog[];
     fuelPrices: FuelPrice[];
     warehouseItems: WarehouseItem[];
+    purchaseOrders: PurchaseOrder[];
 }

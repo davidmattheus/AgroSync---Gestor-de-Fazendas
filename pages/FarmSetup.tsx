@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFarmData } from '../context/FarmDataContext';
-import { TractorIcon } from '../components/ui/Icons';
+import { CornIcon } from '../components/ui/Icons';
 
 const FarmSetup: React.FC = () => {
-    const [farmName, setFarmName] = useState('');
+    const [farmName, setFarmName] = useState('Cerrado Verde');
     const { setFarmName: saveFarmName } = useFarmData();
     const navigate = useNavigate();
 
@@ -22,7 +22,7 @@ const FarmSetup: React.FC = () => {
             <div className="w-full max-w-lg p-8 m-4 space-y-6 bg-white rounded-2xl shadow-lg">
                 <div className="text-center">
                     <div className="inline-block p-3 mb-4 bg-agro-green rounded-full">
-                        <TractorIcon className="text-white" size={32}/>
+                        <CornIcon className="text-white" size={32}/>
                     </div>
                     <h1 className="text-3xl font-bold text-agro-gray-800">Configure sua Fazenda</h1>
                     <p className="mt-2 text-agro-gray-600">Para começar, dê um nome à sua fazenda. Você poderá gerenciar todas as suas operações a partir daqui.</p>

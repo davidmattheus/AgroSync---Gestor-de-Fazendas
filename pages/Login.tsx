@@ -2,12 +2,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { TractorIcon } from '../components/ui/Icons';
 
 const Login: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('davidmattheus2@gmail.com');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -50,9 +49,7 @@ const Login: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-agro-light-green">
       <div className="w-full max-w-md p-8 m-4 space-y-6 bg-white rounded-2xl shadow-lg">
         <div className="text-center">
-          <div className="inline-block p-3 mb-4 bg-agro-green rounded-full">
-            <TractorIcon className="text-white" size={32}/>
-          </div>
+          <img src="https://i.imgur.com/TtmFLNL.png" alt="AgroSync Logo" className="w-auto h-24 mx-auto mb-6" />
           <h1 className="text-3xl font-bold text-agro-gray-800">Bem-vindo ao AgroSync</h1>
           <p className="text-agro-gray-600">{isLogin ? 'Faça login para continuar' : 'Crie sua conta para começar'}</p>
         </div>

@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { useFarmData } from '../context/FarmDataContext';
 import Card from '../components/ui/Card';
-import { FuelIcon, WrenchIcon, AlertTriangleIcon } from '../components/ui/Icons';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Machine, MachineStatus, MaintenanceConfig, LastMaintenance } from '../types';
+import { FuelIcon, WrenchIcon, AlertTriangleIcon, ShoppingCartIcon } from '../components/ui/Icons';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Machine, MachineStatus, MaintenanceConfig, LastMaintenance, PurchaseOrderStatus, PurchaseOrder } from '../types';
 
 const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string; }> = ({ title, value, icon, color }) => (
     <Card className="flex items-start justify-between">
@@ -137,13 +137,22 @@ const MaintenanceAlerts: React.FC<{ machines: Machine[] }> = ({ machines }) => {
     );
 };
 
-const Dashboard: React.FC = () => {
-    const { farm, loading } = useFarmData();
+const PIE_CHART_COLORS = ['#3B82F6', '#F97316', '#10B981']; // Blue for Fuel, Orange for Maint, Green for Purchases
 
-    const { totalFuelCost, totalMaintenanceCost, totalMonthCost, chartData } = useMemo(() => {
+const Dashboard: React.FC = () => {
+    const { farm, loading, getWarehouseItemById } = useFarmData();
+
+    const { totalFuelCost, totalMaintenanceCost, totalPurchaseCost, fuelMonthCost, purchaseMonthCost, chartData, pieData } = useMemo(() => {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
+
+        const calculateOrderCost = (order: PurchaseOrder): number => {
+            return order.items.reduce((orderTotal, item) => {
+                const itemInfo = getWarehouseItemById(item.itemId);
+                return orderTotal + ((itemInfo?.unitValue || 0) * item.quantity);
+            }, 0);
+        };
 
         const totalFuelCost = farm.fuelLogs.reduce((acc, log) => acc + log.totalValue, 0);
         const totalMaintenanceCost = farm.maintenanceLogs.reduce((acc, log) => acc + log.totalCost, 0);
@@ -154,15 +163,18 @@ const Dashboard: React.FC = () => {
                 return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear;
             })
             .reduce((acc, log) => acc + log.totalValue, 0);
-
-        const maintenanceMonthCost = farm.maintenanceLogs
-            .filter(log => {
-                const logDate = new Date(log.date);
-                return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear;
-            })
-            .reduce((acc, log) => acc + log.totalCost, 0);
         
-        const totalMonthCost = fuelMonthCost + maintenanceMonthCost;
+        const fulfilledOrders = farm.purchaseOrders.filter(o => o.status === PurchaseOrderStatus.FULFILLED);
+
+        const totalPurchaseCost = fulfilledOrders.reduce((total, order) => total + calculateOrderCost(order), 0);
+        
+        const purchaseMonthCost = fulfilledOrders
+            .filter(order => {
+                if (!order.fulfilledDate) return false;
+                const fulfilledDate = new Date(order.fulfilledDate);
+                return fulfilledDate.getMonth() === currentMonth && fulfilledDate.getFullYear() === currentYear;
+            })
+            .reduce((total, order) => total + calculateOrderCost(order), 0);
 
         const chartData = farm.machines.map(machine => {
             const fuelCost = farm.fuelLogs
@@ -178,46 +190,67 @@ const Dashboard: React.FC = () => {
             };
         });
 
-        return { totalFuelCost, totalMaintenanceCost, totalMonthCost, chartData };
+        const pieData = [
+            { name: 'Abastecimento', value: totalFuelCost },
+            { name: 'Manutenção', value: totalMaintenanceCost },
+            { name: 'Compras', value: totalPurchaseCost },
+        ].filter(d => d.value > 0);
 
-    }, [farm]);
+        return { totalFuelCost, totalMaintenanceCost, totalPurchaseCost, fuelMonthCost, purchaseMonthCost, chartData, pieData };
+
+    }, [farm, getWarehouseItemById]);
 
 
     if (loading) return <div>Carregando dashboard...</div>
+
+    const totalCost = totalFuelCost + totalMaintenanceCost + totalPurchaseCost;
 
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-agro-gray-800">Dashboard Operacional</h2>
             
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <StatCard title="Total de Abastecimentos (Mês)" value={totalMonthCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} icon={<FuelIcon className="text-blue-800" />} color="bg-blue-200" />
-                <StatCard title="Total de Manutenções (Geral)" value={totalMaintenanceCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} icon={<WrenchIcon className="text-orange-800" />} color="bg-orange-200" />
-                <StatCard title="Custo Total (Geral)" value={(totalFuelCost + totalMaintenanceCost).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} icon={<span className="text-agro-green font-bold text-xl">R$</span>} color="bg-agro-light-green" />
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Abastecimentos (Mês)" value={fuelMonthCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} icon={<FuelIcon className="text-blue-800" />} color="bg-blue-200" />
+                <StatCard title="Compras (Mês)" value={purchaseMonthCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} icon={<ShoppingCartIcon className="text-emerald-800" />} color="bg-emerald-200" />
+                <StatCard title="Manutenções (Geral)" value={totalMaintenanceCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} icon={<WrenchIcon className="text-orange-800" />} color="bg-orange-200" />
+                <StatCard title="Custo Total (Geral)" value={totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} icon={<span className="text-agro-green font-bold text-xl">R$</span>} color="bg-agro-light-green" />
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                    <Card>
-                        <h3 className="text-lg font-semibold text-agro-gray-800 mb-4">Custos por Máquina</h3>
-                        <div style={{ width: '100%', height: 300 }}>
-                            <ResponsiveContainer>
-                                <BarChart data={chartData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" />
-                                    <YAxis tickFormatter={(value) => `R$${value/1000}k`} />
-                                    <Tooltip formatter={(value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/>
-                                    <Legend />
-                                    <Bar dataKey="Abastecimento" fill="#3B82F6" />
-                                    <Bar dataKey="Manutenção" fill="#F97316" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </Card>
-                </div>
-                <div className="lg:col-span-1">
-                    <MaintenanceAlerts machines={farm.machines} />
-                </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                 <Card>
+                    <h3 className="text-lg font-semibold text-agro-gray-800 mb-4">Custos por Máquina</h3>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis tickFormatter={(value) => `R$${value/1000}k`} />
+                                <Tooltip formatter={(value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/>
+                                <Legend />
+                                <Bar dataKey="Abastecimento" fill="#3B82F6" />
+                                <Bar dataKey="Manutenção" fill="#F97316" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </Card>
+                <Card>
+                    <h3 className="text-lg font-semibold text-agro-gray-800 mb-4">Distribuição de Custos Totais</h3>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <PieChart>
+                                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                                    {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={PIE_CHART_COLORS[index % PIE_CHART_COLORS.length]} />)}
+                                </Pie>
+                                <Tooltip formatter={(value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </Card>
             </div>
+            
+            <MaintenanceAlerts machines={farm.machines} />
+
         </div>
     );
 };

@@ -83,3 +83,21 @@ export const FileTextIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
 export const BoxIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
 );
+
+export const ShoppingCartIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+);
+
+export const PrinterIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+);
+
+export const SeedlingIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M11 20A7 7 0 0 1 4 13H2a10 10 0 0 0 10 10v-2a3 3 0 0 1-3-3z"/><path d="M13 4a7 7 0 0 1 7 7h2a10 10 0 0 0-10-10v2a3 3 0 0 1 3 3z"/></svg>
+);
+
+export const CornIcon: React.FC<IconProps> = ({ size = 24, ...props }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M17,5H7A2,2 0 0,0 5,7V17A2,2 0 0,0 7,19H17A2,2 0 0,0 19,17V7A2,2 0 0,0 17,5M13,7A1,1 0 0,1 14,8A1,1 0 0,1 13,9A1,1 0 0,1 12,8A1,1 0 0,1 13,7M9,7A1,1 0 0,1 10,8A1,1 0 0,1 9,9A1,1 0 0,1 8,8A1,1 0 0,1 9,7M13,11A1,1 0 0,1 14,12A1,1 0 0,1 13,13A1,1 0 0,1 12,12A1,1 0 0,1 13,11M9,11A1,1 0 0,1 10,12A1,1 0 0,1 9,13A1,1 0 0,1 8,12A1,1 0 0,1 9,11M13,15A1,1 0 0,1 14,16A1,1 0 0,1 13,17A1,1 0 0,1 12,16A1,1 0 0,1 13,15M9,15A1,1 0 0,1 10,16A1,1 0 0,1 9,17A1,1 0 0,1 8,16A1,1 0 0,1 9,15Z" />
+  </svg>
+);

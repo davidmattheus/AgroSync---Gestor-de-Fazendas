@@ -20,7 +20,7 @@ const initialLogState: Omit<FuelLog, 'id'> = {
 // Modal Component
 const FuelingFormModal: React.FC<{ logToEdit: FuelLog | null; onClose: () => void; }> = ({ logToEdit, onClose }) => {
     const { farm, addFuelLog, updateFuelLog } = useFarmData();
-    const [formData, setFormData] = useState<Omit<FuelLog, 'id'>>(initialLogState);
+    const [formData, setFormData] = useState<Omit<FuelLog, 'id' | 'date'> & { date: string }>({ ...initialLogState });
     
     useEffect(() => {
         if (logToEdit) {
@@ -67,7 +67,16 @@ const FuelingFormModal: React.FC<{ logToEdit: FuelLog | null; onClose: () => voi
     };
     
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData(prev => ({ ...prev, date: new Date(e.target.value).toISOString() }));
+        const dateString = e.target.value;
+        if (dateString) {
+            // Create Date object from YYYY-MM-DD string as UTC to avoid timezone shift
+            const parts = dateString.split('-').map(Number);
+            const utcDate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+            setFormData(prev => ({ ...prev, date: utcDate.toISOString() }));
+        } else {
+            // If date is cleared, set it to an empty string to be caught by validation
+            setFormData(prev => ({ ...prev, date: '' }));
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -77,10 +86,12 @@ const FuelingFormModal: React.FC<{ logToEdit: FuelLog | null; onClose: () => voi
             return;
         }
 
+        const finalData = formData as FuelLog;
+
         if (logToEdit) {
-            updateFuelLog({ ...formData, id: logToEdit.id });
+            updateFuelLog({ ...finalData, id: logToEdit.id });
         } else {
-            addFuelLog(formData);
+            addFuelLog(finalData);
         }
         onClose();
     };
@@ -96,7 +107,7 @@ const FuelingFormModal: React.FC<{ logToEdit: FuelLog | null; onClose: () => voi
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div>
                             <label className="text-sm font-bold text-gray-600 block">Data</label>
-                            <input type="date" value={formData.date.split('T')[0]} onChange={handleDateChange} required className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green" />
+                            <input type="date" value={formData.date ? formData.date.split('T')[0] : ''} onChange={handleDateChange} required className="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-agro-green" />
                         </div>
                         <div>
                             <label className="text-sm font-bold text-gray-600 block">Máquina</label>

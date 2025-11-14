@@ -11,6 +11,7 @@ import Fueling from './pages/Fueling';
 import Maintenance from './pages/Maintenance';
 import MaintenanceDetail from './pages/MaintenanceDetail';
 import Warehouse from './pages/Almoxarifado';
+import Purchases from './pages/Purchases'; // Import the new Purchases page
 import Collaborators from './pages/Collaborators';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -40,6 +41,7 @@ const App: React.FC = () => {
               <Route path="maintenance" element={<Maintenance />} />
               <Route path="maintenance/:id" element={<MaintenanceDetail />} />
               <Route path="warehouse" element={<Warehouse />} />
+              <Route path="purchases" element={<Purchases />} /> {/* Add the new route */}
               <Route path="collaborators" element={<Collaborators />} />
               <Route path="reports" element={<Reports />} />
               <Route path="settings" element={<Settings />} />
@@ -79,11 +81,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
 const AppLayout: React.FC = () => {
     const [sidebarOpen, setSidebarOpen] = React.useState(false);
     return (
-        <div className="flex h-screen bg-agro-gray-100">
+        <div className="flex h-screen bg-agro-gray-100 app-layout">
             <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
                 <Header setSidebarOpen={setSidebarOpen} />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-agro-gray-100 p-4 md:p-6 lg:p-8">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-agro-gray-100 p-4 md:p-6 lg:p-8 app-main-content">
                     <Outlet />
                 </main>
             </div>

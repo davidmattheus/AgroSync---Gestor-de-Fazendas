@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useFarmData } from '../../context/FarmDataContext';
@@ -9,7 +10,7 @@ const Header: React.FC<{ setSidebarOpen: (open: boolean) => void; }> = ({ setSid
   const { farm } = useFarmData();
 
   return (
-    <header className="flex items-center justify-between h-16 px-4 bg-white border-b md:px-6">
+    <header className="flex items-center justify-between h-16 px-4 bg-white border-b md:px-6 print-hidden">
       <div className="flex items-center">
         <button
           onClick={() => setSidebarOpen(true)}
